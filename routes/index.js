@@ -4,6 +4,8 @@ const secret = require('../secret_heroku');
 const express = require('express');
 const router = express.Router();
 
+var tweet_texts = {};
+
 router.get('/', (req, res) => {
   var Twitter = require('twitter');
   var client = new Twitter({
@@ -22,9 +24,22 @@ router.get('/', (req, res) => {
   };
   client.get('search/tweets', params, function(error, tweets, response) {
     if (!error) {
+      if (Object.keys(tweet_texts).length > 200) {
+        tweet_texts = {};
+      }
+      
+      var new_tweets = [];
+      for (var i = 0; i < tweets.length; i++) {
+        if (tweets[i].text in tweet_texts) {
+          continue;
+        }
+        
+        tweet_texts[tweets[i].text] = 1;
+        new_tweets.push(tweets[i]);
+      }
       res.render('index', {
         title: 'Tweets - Gboard',
-        tweets: tweets
+        tweets: new_tweets
       });
     } else {
       res.status(403).send(error).end();
